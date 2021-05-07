@@ -505,7 +505,7 @@ def print_lipo_model():
   # General battery and measurement parameters:
   # -------------------------------------------
 
-  filename = "measurements/24.8ohm_40min_80min_lipo.csv"
+  filename = "./measurements/24.8ohm_40min_80min_lipo.csv"
   
   U_cutoff = 3.0 # [V]
   R = 24.8 # [Ohm]
