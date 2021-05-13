@@ -541,12 +541,12 @@ def print_lipo_model():
   }
   
   orders = { # order of polynomial
-    "U_Eq": 10,
-    "R_S" : 3,
-    "R_TS": 6,
-    "C_TS": 6,
-    "R_TL": 6,
-    "C_TL": 6
+    "U_Eq": 3,
+    "R_S" : 1,
+    "R_TS": 1,
+    "C_TS": 1,
+    "R_TL": 1,
+    "C_TL": 1
   }
   
   x0 = { # start parameters for function fitting if needed
