@@ -164,8 +164,7 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff, R, T_ON, T_OFF, 
   t, U_Batt = read_measurement_array(filename)
   U_start = get_starting_voltage(t, U_Batt, t_offset)
   print("U_start = {} V".format(U_start))
-  # Start voltage = mean voltage in offset time
-
+  
   t, U_Batt = get_interval(t, U_Batt, t_offset) # cut idle time in beginning
    
   t_cutoff = get_cutoff_time(t, U_Batt, U_cutoff)
@@ -174,7 +173,6 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff, R, T_ON, T_OFF, 
   interval_len = (T_ON + T_OFF)
   nr_intervals = round(t[-1] / interval_len)
   print("discharge intervals = {}".format(nr_intervals))
-  # calculate # of intervals by total time divide total operation step time (one discharge step time + one rest step time)
    
   if C_nominal is None:
     C_nominal = get_nominal_capacity(t, U_Batt, T_ON, T_OFF, nr_intervals, R) # [mAs]
@@ -507,7 +505,7 @@ def print_lipo_model():
   # General battery and measurement parameters:
   # -------------------------------------------
 
-  filename = "./measurements/24.8ohm_40min_80min_lipo.csv"
+  filename = "measurements/24.8ohm_40min_80min_lipo.csv"
   
   U_cutoff = 3.0 # [V]
   R = 24.8 # [Ohm]
@@ -541,12 +539,12 @@ def print_lipo_model():
   }
   
   orders = { # order of polynomial
-    "U_Eq": 3,
+    "U_Eq": 10,
     "R_S" : 3,
-    "R_TS": 3,
-    "C_TS": 3,
-    "R_TL": 3,
-    "C_TL": 3
+    "R_TS": 6,
+    "C_TS": 6,
+    "R_TL": 6,
+    "C_TL": 6
   }
   
   x0 = { # start parameters for function fitting if needed
