@@ -273,6 +273,7 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff, R, T_ON, T_OFF, 
     plt.plot(np.concatenate((np.array([0]), np.array(tr_list)), axis=0),\
            np.concatenate((np.array([U_start]), np.array(U_Eq_list)), axis=0),\
            'b-', label="U_Eq")
+    plt.title('Observerdata')
     plt.legend()
     plt.show()
       
@@ -360,6 +361,7 @@ def fit_model_functions(U_start, U_cutoff, params, poly, orders, x0, plot = True
   if plot: 
     pylab.plot(xdata, ydata, 'b.')
     pylab.plot(xdata_hires, ploty, 'r')
+    plt.title('OCV-SOC')
     pylab.show()
     pylab.clf()
     
@@ -505,11 +507,14 @@ def print_lipo_model():
   # General battery and measurement parameters:
   # -------------------------------------------
 
+  # filename = "measurements/24.8ohm_50s_50s_lipo.csv"
   filename = "measurements/24.8ohm_40min_80min_lipo.csv"
-  
   U_cutoff = 3.0 # [V]
   R = 24.8 # [Ohm]
   
+  # T_ON = 50#40 * 60 # [s]
+  # T_OFF = 50 #80 * 60 # [s]
+  # t_offset = 18 #10 * 60 # [s]
   T_ON = 40 * 60 # [s]
   T_OFF = 80 * 60 # [s]
   t_offset = 10 * 60 # [s]
