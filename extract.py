@@ -27,7 +27,7 @@ def read_measurement_array(infile):
 def save_measurement_array(outfile, xdata, ydata): 
   with open(outfile, "w") as wfile:
     for x,y in np.c_[xdata,ydata]:
-      wfile.write("%f,%f\n" % (x,y))  
+      wfile.write("%f,%f\n" % (x,y))
 
 
 # Extract starting voltage by averaging the first n time units of measurement
@@ -111,6 +111,7 @@ def get_nominal_capacity(t, U_Batt, T_ON, T_OFF, nr_of_intervals, R):
 # Function used to fit the U_Batt relaxation curve.
 # Expects time (t) in seconds.
 def relaxation_curve(t, a, b, c, d):
+  # return a * (np.exp(b * t)) -c * (np.exp(-d * t))
   return a * (1 - np.exp(-b * t)) + c * (1 - np.exp(-d * t))
 
 
@@ -119,7 +120,7 @@ def expfunc(SOC, p):
   p = np.array(p)
   p = np.pad(p, (0,10 - p.shape[0]), 'constant', constant_values=(0,0))
   return p[0]*np.exp(-p[1]*SOC) + p[2] + p[3]*SOC + p[4]*np.power(SOC,2) + p[5]*np.power(SOC,3) + p[6]*np.power(SOC,4) + p[7]*np.power(SOC,5) + p[8]*np.power(SOC,6) + p[9]*np.power(SOC,7)  
-  
+
 def expfunc3(SOC, p0, p1, p2):
   return expfunc(SOC, [p0, p1, p2])
 
@@ -158,7 +159,7 @@ def getExpfunc(order):
   
 # Extract circuit parameters (U_Eq, R_S, R_TS, etc.) from measurement data.
 # Expects time in seconds.
-def extract_parameters(filename, t_offset, C_nominal, U_cutoff, R, T_ON, T_OFF, iota, plot = False):
+def extract_parameters(filename, t_offset, C_nominal, U_cutoff, R, T_ON, T_OFF, iota, plot = True):
   print("Extracting {}\n".format(filename))
     
   t, U_Batt = read_measurement_array(filename)
@@ -194,7 +195,7 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff, R, T_ON, T_OFF, 
  
   C_Batt = C_nominal
   
-  x0 = np.array([ 0.01 ,  0.02,  0.01,  0.003])
+  x0 = np.array([ 0.01 ,  0.02,  0.01,  0.003]) #initinal value to reduce compution cost
   
   for i in range(int(nr_intervals)):
     print("\nInterval %i:" % i)
@@ -269,7 +270,7 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff, R, T_ON, T_OFF, 
   if True:
     plt.xlabel('t [s]')
     plt.ylabel('U [V]')
-    plt.plot(t, U_Batt, 'b-')
+    plt.plot(t, U_Batt, 'y-', label='U_Batt-obs.')
     plt.plot(td_list, U_Batt_td_list, 'r-', label="U_Batt(td)")
     plt.plot(td_list, U_Batt_tdiota_list, 'g-', label="U_Batt(td+i)")
     plt.plot(np.concatenate((np.array([0]), np.array(tr_list)), axis=0),\
@@ -277,6 +278,7 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff, R, T_ON, T_OFF, 
            'b-', label="U_Eq")
     plt.legend()
     plt.show()
+    plt.savefig("plots/SOC-OCV.png")
       
   return U_start, C_nominal / 3600.0, {
     "U_Eq": np.array(U_Eq_list),
@@ -362,6 +364,7 @@ def fit_model_functions(U_start, U_cutoff, params, poly, orders, x0, plot = True
   if plot: 
     pylab.plot(xdata, ydata, 'b.')
     pylab.plot(xdata_hires, ploty, 'r')
+    pylab.title('SOC-OCV')
     pylab.show()
     pylab.clf()
     
@@ -386,10 +389,12 @@ def fit_model_functions(U_start, U_cutoff, params, poly, orders, x0, plot = True
     
   s += tmp
   if degree > max_degree: max_degree = degree
-    
+
   pylab.plot(xdata, ydata, 'b.')
   pylab.plot(xdata_hires, ploty, 'r')
+  pylab.title('SOC-R_S')
   if plot: pylab.show()
+  pylab.savefig("plots/R_S.png")
   pylab.clf()
   save_measurement_array("plots/{}-points.csv".format(name), xdata * 100, ydata)
   save_measurement_array("plots/{}-func.csv".format(name), xdata_hires * 100, ploty)
@@ -414,7 +419,9 @@ def fit_model_functions(U_start, U_cutoff, params, poly, orders, x0, plot = True
   if plot: 
     pylab.plot(xdata, ydata, 'b.')
     pylab.plot(xdata_hires, ploty, 'r')
+    pylab.title('SOC-R_TS')
     pylab.show()
+    pylab.savefig("plots/R_TS.png")
     pylab.clf()
     
     save_measurement_array("plots/{}-points.csv".format(name), xdata * 100, ydata)
@@ -440,7 +447,9 @@ def fit_model_functions(U_start, U_cutoff, params, poly, orders, x0, plot = True
   if plot: 
     pylab.plot(xdata, ydata, 'b.')
     pylab.plot(xdata_hires, ploty, 'r')
+    pylab.title('SOC-C_TS')
     pylab.show()
+    pylab.savefig("plots/C_TS.png")
     pylab.clf()
     
     save_measurement_array("plots/{}-points.csv".format(name), xdata * 100, ydata)
@@ -466,7 +475,9 @@ def fit_model_functions(U_start, U_cutoff, params, poly, orders, x0, plot = True
   if plot: 
     pylab.plot(xdata, ydata, 'b.')
     pylab.plot(xdata_hires, ploty, 'r')
+    pylab.title('SOC-R_TL')
     pylab.show()
+    pylab.savefig("plots/R_TL.png")
     pylab.clf()
     
     save_measurement_array("plots/{}-points.csv".format(name), xdata * 100, ydata)
@@ -492,7 +503,9 @@ def fit_model_functions(U_start, U_cutoff, params, poly, orders, x0, plot = True
   if plot: 
     pylab.plot(xdata, ydata, 'b.')
     pylab.plot(xdata_hires, ploty, 'r')
+    pylab.title('SOC-C_TL')
     pylab.show()
+    pylab.savefig("plots/C_TL.png")
     pylab.clf()
     
     save_measurement_array("plots/{}-points.csv".format(name), xdata * 100, ydata)
@@ -532,7 +545,7 @@ def print_lipo_model():
   # -----------------------------------------------------------------
   
   poly = { # type of polynomial (true = regular, false = expfunc)
-    "U_Eq": True,  
+    "U_Eq": False,
     "R_S" : False,
     "R_TS": False,
     "C_TS": False,
@@ -541,7 +554,7 @@ def print_lipo_model():
   }
   
   orders = { # order of polynomial
-    "U_Eq": 3,
+    "U_Eq": 6,
     "R_S" : 3,
     "R_TS": 3,
     "C_TS": 3,
