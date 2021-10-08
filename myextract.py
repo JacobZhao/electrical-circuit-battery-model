@@ -244,6 +244,8 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff,I_dis, R, T_ON, T
 
     print("Exponential curve fitting...")
     x, y = get_interval(t, U_Batt, td + iota, tr)
+    save_measurement_array("plots/interval/interval-{}-points.csv".format(i), x, y- U_Batt_tdiota)
+
     p, _ = optimization.curve_fit(relaxation_curve, x, y - U_Batt_tdiota, maxfev=100000, p0=x0)
     x0 = p
     
@@ -565,17 +567,17 @@ def print_lipo_model():
   }
   
   orders = { # order of polynomial
-    "U_Eq": 6,
+    "U_Eq": 8,
     "R_S" : 3,
-    "R_TS": 4,
-    "C_TS": 4,
-    "R_TL": 4,
-    "C_TL": 4
+    "R_TS": 5,
+    "C_TS": 5,
+    "R_TL": 5,
+    "C_TL": 5
   }
   
   x0 = { # start parameters for function fitting if needed
     "U_Eq": None,
-    "R_S" : np.array([1.0, 10.0, 0.0]),
+    "R_S" : None,#np.array([1.0, 10.0, 0.0]),
     "R_TS": None,
     "C_TS": None,
     "R_TL": None,
