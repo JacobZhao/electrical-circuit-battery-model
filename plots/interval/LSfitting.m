@@ -11,7 +11,7 @@ for i=1:length(files)
     xdata=table2array(cell{i}(:,1));
     ydata=table2array(cell{i}(:,2));
     scatter(xdata,ydata,'.')
-    x = lsqcurvefit(f,x0,xdata,ydata)
+    x = lsqcurvefit(f,x0,xdata,ydata);
 %     x = lsqnonlin(f,x0,xdata,ydata,options)
     xx(i,:)=x;
 

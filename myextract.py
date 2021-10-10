@@ -533,7 +533,7 @@ def print_lipo_model():
   # General battery and measurement parameters:
   # -------------------------------------------
 
-  filename = "./measurements/first.csv"
+  filename = "./measurements/RW9/cycle-1.csv"
   
   U_cutoff = 3.2 # [V]
   R = 24.8 # [Ohm]
@@ -569,10 +569,10 @@ def print_lipo_model():
   orders = { # order of polynomial
     "U_Eq": 8,
     "R_S" : 3,
-    "R_TS": 5,
-    "C_TS": 5,
-    "R_TL": 5,
-    "C_TL": 5
+    "R_TS": 8,
+    "C_TS": 8,
+    "R_TL": 8,
+    "C_TL": 8
   }
   
   x0 = { # start parameters for function fitting if needed
