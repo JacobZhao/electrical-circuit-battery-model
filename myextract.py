@@ -24,7 +24,8 @@ def read_measurement_array(infile):
 
 
 # Saves two float numpy arrays as CSV.
-def save_measurement_array(outfile, xdata, ydata): 
+
+def save_measurement_array(outfile, xdata, ydata):
   with open(outfile, "w") as wfile:
     for x,y in np.c_[xdata,ydata]:
       wfile.write("%f,%f\n" % (x,y))
