@@ -111,9 +111,10 @@ def get_nominal_capacity(t, U_Batt, T_ON, T_OFF, nr_of_intervals, R):
    
 # Function used to fit the U_Batt relaxation curve.
 # Expects time (t) in seconds.
-def relaxation_curve(t, a, b, c, d):
+def relaxation_curve(t, a, b, c, d, e):
   # return a * (np.exp(b * t)) -c * (np.exp(-d * t))
-  return a * (1 - np.exp(-b * t)) + c * (1 - np.exp(-d * t))
+  # return a * (1 - np.exp(-b * t)) + c * (1 - np.exp(-d * t))
+  return  a - b * (np.exp(-c * t)) - d * (np.exp(-e * t))
 
 
 # Exponential polynomials used to fit the parameter params  
@@ -165,6 +166,7 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff,I_dis, R, T_ON, T
     
   t, U_Batt = read_measurement_array(filename)
   U_start = get_starting_voltage(t, U_Batt, t_offset)
+  U_start_0 = U_start
   print("U_start = {} V".format(U_start))
   # Start voltage = mean voltage in offset time
 
@@ -192,11 +194,12 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff,I_dis, R, T_ON, T
   td_list = list()
   tr_list = list()
   U_Batt_td_list = list()
+  U_Batt_tsd_list = list()
   U_Batt_tdiota_list = list()
  
   C_Batt = C_nominal
   
-  x0 = np.array([ 0.01 ,  0.02,  0.01,  0.003]) #initinal value to reduce compution cost
+  x0 = np.array([ 3, 0.01 ,  0.02,  0.01,  0.003]) #initinal value to reduce compution cost
   
   for i in range(int(nr_intervals)):
     print("\nInterval %i:" % i)
@@ -207,7 +210,14 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff,I_dis, R, T_ON, T
     
     td_list.append(td)
     tr_list.append(tr)
-     
+
+    # calculate voltage at start discharge
+    _, y = get_interval(t, U_Batt, U_cutoff, U_cutoff +10)
+    U_Batt_tsd = np.mean(y)
+    U_Batt_tsd_list.append(U_Batt_tsd)
+    print("U_Batt(tsd) = {} V".format(U_Batt_tsd))
+
+    # calculate voltage at finishe discharge
     _, y = get_interval(t, U_Batt, td - 2, td)
     U_Batt_td = np.mean(y) # use average of a few ms for higher precision
     U_Batt_td_list.append(U_Batt_td)
@@ -219,8 +229,9 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff,I_dis, R, T_ON, T
     print("I_Batt(td) = {} A".format(I_dis))
     print("R = {} ohm".format(R))
 
-    x, y = get_interval(t, U_Batt, U_cutoff, td)
-    C_interval = get_used_capacity_in_interval(x, y, R)
+    # x, y = get_interval(t, U_Batt, U_cutoff, td)
+    # C_interval = get_used_capacity_in_interval(x, y, R)
+    C_interval = (td-U_cutoff)*I_dis*1000
     print("C_interval = {} mAh".format(C_interval / 3600.0)) 
      
     C_Batt -= C_interval
@@ -232,41 +243,46 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff,I_dis, R, T_ON, T
      
 
     
-    _, y = get_interval(t, U_Batt, td + iota, td + 2)
+    _, y = get_interval(t, U_Batt, td + iota, td + 10)
     U_Batt_tdiota = np.mean(y) # use average of a few ms for higher precision
     U_Batt_tdiota_list.append(U_Batt_tdiota)
     print("U_Batt(td+i) = {} V".format(U_Batt_tdiota))
      
 
-    
-    R_S = (U_Batt_tdiota - U_Batt_td) / I_dis
+    R_S_1 = (U_start - U_Batt_tsd) / I_dis
+    R_S_2 = (U_Batt_tdiota - U_Batt_td) / I_dis
+    R_S = np.mean([R_S_1,R_S_2])
     R_S_list.append(R_S)
     print("R_S = {} Ohm".format(R_S))
 
+    U_start = get_starting_voltage(t, U_Batt, tr)
+    print("U_start = {} V".format(U_start))
+
+
     print("Exponential curve fitting...")
-    x, y = get_interval(t, U_Batt, td + iota, tr)
+    x, y = get_interval(t, U_Batt, td + 10, tr)
     save_measurement_array("plots/interval/interval-{}-points.csv".format(i), x, y- U_Batt_tdiota)
 
-    p, _ = optimization.curve_fit(relaxation_curve, x, y - U_Batt_tdiota, maxfev=100000, p0=x0)
+    p, _ = optimization.curve_fit(relaxation_curve, x, y, maxfev=100000, p0=x0)
     x0 = p
     
-    U_Eq = U_Batt_tdiota + p[0] + p[2]
+    U_Eq = p[0]
     U_Eq_list.append(U_Eq)
     print("U_Eq = {} V".format(U_Eq))
     
-    R_TS = p[0] / I_dis
+    R_TS = p[1] * I_dis
     R_TS_list.append(R_TS)
     print("R_TS = {} Ohm".format(R_TS))
     
-    R_TL = p[2] / I_dis
+    R_TL = p[3] * I_dis
     R_TL_list.append(R_TL)
     print("R_TL = {} Ohm".format(R_TL))
      
-    C_TS = 1.0 / float(R_TS * p[1])
+    C_TS = 1.0 / float(R_TS * p[2])
     C_TS_list.append(C_TS)    
     print("C_TS = {} F".format(C_TS))
     
-    C_TL = 1.0 / float(R_TL * p[2])
+    C_TL = 1.0 / float(R_TL * p[4])
     C_TL_list.append(C_TL)
     print("C_TL = {} F".format(C_TL))
     
@@ -284,13 +300,13 @@ def extract_parameters(filename, t_offset, C_nominal, U_cutoff,I_dis, R, T_ON, T
     plt.plot(td_list, U_Batt_td_list, 'r-', label="U_Batt(td)")
     plt.plot(td_list, U_Batt_tdiota_list, 'g-', label="U_Batt(td+i)")
     plt.plot(np.concatenate((np.array([0]), np.array(tr_list)), axis=0),\
-           np.concatenate((np.array([U_start]), np.array(U_Eq_list)), axis=0),\
+           np.concatenate((np.array([U_start_0]), np.array(U_Eq_list)), axis=0),\
            'b-', label="U_Eq")
     plt.legend()
     plt.savefig("plots/SOC-OCV.png")
     plt.show()
       
-  return U_start, C_nominal / 3600.0, {
+  return U_start_0, C_nominal / 3600.0, {
     "U_Eq": np.array(U_Eq_list),
     "R_S":  np.array(R_S_list),
     "R_TS": np.array(R_TS_list),
@@ -534,7 +550,7 @@ def print_lipo_model():
   # General battery and measurement parameters:
   # -------------------------------------------
 
-  filename = "./measurements/RW9/cycle-1.csv"
+  filename = "./measurements/RW9/cycle-3.csv"
   
   U_cutoff = 3.2 # [V]
   R = 24.8 # [Ohm]
@@ -560,7 +576,7 @@ def print_lipo_model():
   
   poly = { # type of polynomial (true = regular, false = expfunc)
     "U_Eq": False,
-    "R_S" : False,
+    "R_S" : True,
     "R_TS": False,
     "C_TS": False,
     "R_TL": False,
@@ -568,12 +584,12 @@ def print_lipo_model():
   }
   
   orders = { # order of polynomial
-    "U_Eq": 8,
-    "R_S" : 3,
-    "R_TS": 8,
-    "C_TS": 8,
-    "R_TL": 8,
-    "C_TL": 8
+    "U_Eq": 6,
+    "R_S" : 4,
+    "R_TS": 5,
+    "C_TS": 5,
+    "R_TL": 5,
+    "C_TL": 5
   }
   
   x0 = { # start parameters for function fitting if needed
